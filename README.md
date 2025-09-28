@@ -13,3 +13,8 @@ python3 launch.py
 <p>The following example shows the menu of all the functions available in the tool. Remember that using it involves great responsibility and must be done consciously.</p>
 
 <img align="center" src="Data/Menu.png" width="450"/>
+
+<p>Download AutoPayloadGen: </p>
+<a href="">
+  <img src="Data/" alt="Descargar" width="65" style="margin-top:-10px;" />
+</a>  
