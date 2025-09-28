@@ -1,1 +1,1 @@
-<img align="center" src="Data/AutoPayloadGen.jpg" />
+<img align="center" src="Data/APK.jpg" />
