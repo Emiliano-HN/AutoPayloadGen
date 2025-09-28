@@ -22,7 +22,7 @@ def setup_logging():
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler('autopayload.log', mode='a'),
+            logging.FileHandler('autopayload.log', mode='a', encoding='utf-8'),
             logging.StreamHandler(sys.stdout)
         ]
     )
@@ -59,7 +59,6 @@ class SecurityValidator:
     
     @staticmethod
     def sanitize_input(user_input: str) -> str:
-
         dangerous_chars = ['&', '|', ';', '`', '$', '(', ')', '{', '}', '[', ']']
         sanitized = user_input
         for char in dangerous_chars:
@@ -75,19 +74,52 @@ def clear_screen():
     except Exception as e:
         logging.warning(f"No se pudo limpiar la pantalla: {e}")
 
+def check_unicode_support():
+    """Verifica si la terminal soporta Unicode"""
+    try:
+        # Intenta imprimir un carácter Unicode simple
+        print("█", end="")
+        return True
+    except UnicodeEncodeError:
+        return False
+
 def banner():
     clear_screen()
+    
+    # Configurar encoding para stdout
+    if hasattr(sys.stdout, 'reconfigure'):
+        try:
+            sys.stdout.reconfigure(encoding='utf-8')
+        except:
+            pass
+    
+    # Verificar soporte Unicode
+    unicode_support = check_unicode_support()
+    
     print("\033[1;92m")
-    print(r"""
+    
+    if unicode_support:
+        # Banner con caracteres Unicode (original)
+        print(r"""
  █████╗ ██╗   ██╗████████╗ ██████╗ ██████╗  █████╗ ██╗   ██╗██╗      ██████╗  █████╗ ██████╗  ██████╗ ███████╗███╗   ██╗
 ██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗██╔══██╗╚██╗ ██╔╝██║     ██╔═══██╗██╔══██╗██╔══██╗██╔════╝ ██╔════╝████╗  ██║
 ███████║██║   ██║   ██║   ██║   ██║██████╔╝███████║ ╚████╔╝ ██║     ██║   ██║███████║██║  ██║██║  ███╗█████╗  ██╔██╗ ██║
 ██╔══██║██║   ██║   ██║   ██║   ██║██╔═══╝ ██╔══██║  ╚██╔╝  ██║     ██║   ██║██╔══██║██║  ██║██║   ██║██╔══╝  ██║╚██╗██║
 ██║  ██║╚██████╔╝   ██║   ╚██████╔╝██║     ██║  ██║   ██║   ███████╗╚██████╔╝██║  ██║██████╔╝╚██████╔╝███████╗██║ ╚████║
 ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝     ╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝
-    """)
-    print("\033[1;91m AutoPayloadGen | Emiliano Hernández \033[0m\n")
-    print("\033[1;93mADVERTENCIA: Esta herramienta es solo para pruebas de penetración autorizadas\033[0m\n")
+        """)
+    else:
+        # Banner alternativo con caracteres ASCII
+        print(r"""
+ █████  ██    ██ ████████  ██████  ██████   █████  ██    ██ ██       ██████   █████  ██████   ██████  ███████ ███    ██ 
+██   ██ ██    ██    ██    ██    ██ ██   ██ ██   ██  ██  ██  ██      ██    ██ ██   ██ ██   ██ ██       ██      ████   ██ 
+███████ ██    ██    ██    ██    ██ ██████  ███████   ████   ██      ██    ██ ███████ ██   ██ ██   ███ █████   ██ ██  ██ 
+██   ██ ██    ██    ██    ██    ██ ██      ██   ██    ██    ██      ██    ██ ██   ██ ██   ██ ██    ██ ██      ██  ██ ██ 
+██   ██  ██████     ██     ██████  ██      ██   ██    ██    ███████  ██████  ██   ██ ██████   ██████  ███████ ██   ████ 
+        """)
+    
+    print("\033[1;91m AutoPayloadGen | Emiliano Hernandez \033[0m\n")
+    print("\033[1;93mADVERTENCIA: Esta herramienta es solo para pruebas de penetracion autorizadas\033[0m\n")
 
 def get_secure_input(prompt: str, input_type: str = "general") -> Optional[str]:
     validator = SecurityValidator()
@@ -102,49 +134,53 @@ def get_secure_input(prompt: str, input_type: str = "general") -> Optional[str]:
                 user_input = input(prompt).strip()
             
             if not user_input:
-                print("\033[1;91mLa entrada no puede estar vacía\033[0m")
+                print("\033[1;91mLa entrada no puede estar vacia\033[0m")
                 attempts += 1
                 continue
             
             sanitized_input = validator.sanitize_input(user_input)
 
             if input_type == "ip" and not validator.validate_ip(sanitized_input):
-                print("\033[1;91mDirección IP inválida\033[0m")
+                print("\033[1;91mDireccion IP invalida\033[0m")
                 attempts += 1
                 continue
             elif input_type == "port" and not validator.validate_port(sanitized_input):
-                print("\033[1;91mPuerto inválido (1-65535)\033[0m")
+                print("\033[1;91mPuerto invalido (1-65535)\033[0m")
                 attempts += 1
                 continue
             elif input_type == "payload" and not validator.validate_payload_type(sanitized_input):
-                print("\033[1;91mTipo de payload inválido\033[0m")
+                print("\033[1;91mTipo de payload invalido\033[0m")
                 attempts += 1
                 continue
             elif input_type == "url" and not validator.validate_url(sanitized_input):
-                print("\033[1;91mURL inválida\033[0m")
+                print("\033[1;91mURL invalida\033[0m")
                 attempts += 1
                 continue
             
             return sanitized_input
             
         except KeyboardInterrupt:
-            print("\n\033[1;91mOperación cancelada por el usuario\033[0m")
+            print("\n\033[1;91mOperacion cancelada por el usuario\033[0m")
             return None
         except Exception as e:
             logging.error(f"Error al obtener entrada del usuario: {e}")
             attempts += 1
             continue
     
-    print(f"\033[1;91mMáximo número de intentos excedido ({max_attempts})\033[0m")
+    print(f"\033[1;91mMaximo numero de intentos excedido ({max_attempts})\033[0m")
     return None
 
 def check_permissions():
-    if os.geteuid() != 0:
-        print("\033[1;93mAdvertencia: No se están ejecutando con privilegios de root\033[0m")
-        print("\033[1;93m Algunas funciones pueden requerir permisos elevados\033[0m")
-        response = input("\n¿Continuar? (s/N): ").strip().lower()
-        if response != 's':
-            sys.exit(0)
+    try:
+        if os.geteuid() != 0:
+            print("\033[1;93mAdvertencia: No se estan ejecutando con privilegios de root\033[0m")
+            print("\033[1;93m Algunas funciones pueden requerir permisos elevados\033[0m")
+            response = input("\nContinuar? (s/N): ").strip().lower()
+            if response != 's':
+                sys.exit(0)
+    except AttributeError:
+        # Windows no tiene geteuid()
+        pass
 
 def secure_thread_start(target_function, *args, **kwargs):
     def wrapped_target():
@@ -163,13 +199,19 @@ def generate_session_id() -> str:
 
 def main():
     try:
+        # Configurar encoding del sistema
+        if sys.platform.startswith('linux'):
+            os.environ['PYTHONIOENCODING'] = 'utf-8'
+            if 'LANG' not in os.environ:
+                os.environ['LANG'] = 'es_ES.UTF-8'
+        
         setup_logging()
-        logging.info("Iniciando AutoPayloadGen versión segura")
+        logging.info("Iniciando AutoPayloadGen version segura")
         
         check_permissions()
         
         session_id = generate_session_id()
-        logging.info(f"Sesión iniciada: {session_id}")
+        logging.info(f"Sesion iniciada: {session_id}")
         
         banner()
         
@@ -185,7 +227,7 @@ def main():
                 opcion = mostrar_menu_principal()
                 
                 if opcion == "1":
-                    print("\n\033[1;96mGenerando payload automático...\033[0m")
+                    print("\n\033[1;96mGenerando payload automatico...\033[0m")
                     try:
                         result = generar_payload()
                         if result:
@@ -197,15 +239,15 @@ def main():
                                 lanzar_handler(payload, lhost, lport)
                                 logging.info(f"Handler lanzado: {payload} en {lhost}:{lport}")
                             else:
-                                print("\033[1;91mDatos de payload inválidos\033[0m")
+                                print("\033[1;91mDatos de payload invalidos\033[0m")
                         else:
                             print("\033[1;91mError al generar payload\033[0m")
                     except Exception as e:
-                        logging.error(f"Error generando payload automático: {e}")
+                        logging.error(f"Error generando payload automatico: {e}")
                         print("\033[1;91mError interno al generar payload\033[0m")
                 
                 elif opcion == "2":
-                    print("\n\033[1;96mConfiguración manual de handler...\033[0m")
+                    print("\n\033[1;96mConfiguracion manual de handler...\033[0m")
                     
                     lhost = get_secure_input("LHOST: ", "ip")
                     if not lhost:
@@ -237,46 +279,46 @@ def main():
                         print("\033[1;91mError al iniciar servidor PHP\033[0m")
                 
                 elif opcion == "4":
-                    print("\n\033[1;96mGenerando código QR...\033[0m")
+                    print("\n\033[1;96mGenerando codigo QR...\033[0m")
                     url = get_secure_input("Ingresa la URL del APK: ", "url")
                     if url:
                         try:
                             generar_qr(url)
                             logging.info(f"QR generado para URL: {url}")
-                            print("\033[1;92mCódigo QR generado correctamente\033[0m")
+                            print("\033[1;92mCodigo QR generado correctamente\033[0m")
                         except Exception as e:
                             logging.error(f"Error generando QR: {e}")
-                            print("\033[1;91mError al generar código QR\033[0m")
+                            print("\033[1;91mError al generar codigo QR\033[0m")
                 
                 elif opcion == "5":
                     print("\n\033[1;96mInfectando juego...\033[0m")
                     try:
                         seleccionar_e_infectar_juego()
-                        logging.info("Proceso de infección de juego completado")
+                        logging.info("Proceso de infeccion de juego completado")
                     except Exception as e:
                         logging.error(f"Error infectando juego: {e}")
                         print("\033[1;91mError al infectar juego\033[0m")
                 
                 elif opcion == "6":
                     print("\n\033[1;96mCerrando AutoPayloadGen de forma segura...\033[0m")
-                    logging.info(f"Sesión terminada: {session_id}")
+                    logging.info(f"Sesion terminada: {session_id}")
                     break
                 
                 else:
-                    print("\033[1;91mOpción inválida\033[0m")
+                    print("\033[1;91mOpcion invalida\033[0m")
                     
             except KeyboardInterrupt:
-                print("\n\n\033[1;91mInterrupción del usuario detectada\033[0m")
-                logging.info(f"Sesión interrumpida por usuario: {session_id}")
+                print("\n\n\033[1;91mInterrupcion del usuario detectada\033[0m")
+                logging.info(f"Sesion interrumpida por usuario: {session_id}")
                 break
             except Exception as e:
-                logging.error(f"Error en menú principal: {e}")
-                print("\033[1;91mError interno en menú principal\033[0m")
+                logging.error(f"Error en menu principal: {e}")
+                print("\033[1;91mError interno en menu principal\033[0m")
                 continue
     
     except Exception as e:
-        logging.critical(f"Error crítico en main(): {e}")
-        print("\033[1;91mError crítico en la aplicación\033[0m")
+        logging.critical(f"Error critico en main(): {e}")
+        print("\033[1;91mError critico en la aplicacion\033[0m")
         sys.exit(1)
 
 if __name__ == "__main__":
