@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self';">
+    <title>AutoPayloadGen - Panel de Control Seguro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>AutoPayloadGen</h1>
+        <p style="text-align: center; margin-bottom: 2rem; font-size: 1.1rem;">Panel de Control Seguro</p>
+        
+        <div class="warning-banner">
+            <h3>ADVERTENCIA DE SEGURIDAD</h3>
+            <p>Esta herramienta es únicamente para pruebas de penetración autorizadas y fines educativos. El uso no autorizado puede ser ilegal.</p>
+        </div>
+        
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>Configuración de Payload</h3>
+                <div class="info-value" id="payload-value">{{ payload | e }}</div>
+            </div>
+            
+            <div class="info-card">
+                <h3>Host de Destino (LHOST)</h3>
+                <div class="info-value" id="lhost-value">{{ lhost | e }}</div>
+            </div>
+            
+            <div class="info-card">
+                <h3>Puerto de Destino (LPORT)</h3>
+                <div class="info-value" id="lport-value">{{ lport | e }}</div>
+            </div>
+            
+            <div class="info-card">
+                <h3>Estado del Servidor</h3>
+                <div class="info-value">
+                    <span class="status-indicator {% if web_status == 'Activo' %}status-active{% else %}status-inactive{% endif %}"></span>
+                    <span id="status-value">{{ web_status | e }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-card" style="text-align: center;">
+            <h3>Tiempo Restante de Sesión</h3>
+            <div class="countdown-display" id="countdown-display">{{ countdown | e }}</div>
+        </div>
+        
+        <div class="actions-section">
+            <button class="refresh-btn" onclick="refreshData()">Actualizar Estado</button>
+        </div>
+        
+        <div class="download-section">
+            <h3>Archivos Disponibles</h3>
+            <div class="download-list">
+                <a href="/static/app.apk" class="download-btn" download>
+                    Descargar APK Principal
+                </a>
+                <a href="/static/payload.apk" class="download-btn" download>
+                    Descargar Payload APK
+                </a>
+            </div>
+            <div class="security-notice">
+                <strong>Nota de Seguridad:</strong> Solo descargue archivos en entornos controlados y autorizados.
+                Escanee todos los archivos antes de su uso en sistemas de producción.
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>AutoPayloadGen - Herramienta de Pruebas de Penetración</p>
+            <p>Úsela de manera responsable y ética</p>
+        </div>
+    </div>
+    
+    <script>
+        // Función para actualizar datos del dashboard
+        async function refreshData() {
+            try {
+                const response = await fetch('/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        // Actualizar elementos del DOM de forma segura
+                        const payloadElement = document.getElementById('payload-value');
+                        const lhostElement = document.getElementById('lhost-value');
+                        const lportElement = document.getElementById('lport-value');
+                        const statusElement = document.getElementById('status-value');
+                        const countdownElement = document.getElementById('countdown-display');
+                        
+                        if (payloadElement) payloadElement.textContent = data.data.payload || 'No configurado';
+                        if (lhostElement) lhostElement.textContent = data.data.lhost || 'No configurado';
+                        if (lportElement) lportElement.textContent = data.data.lport || 'No configurado';
+                        if (statusElement) statusElement.textContent = data.data.web_status || 'Desconocido';
+                        if (countdownElement) countdownElement.textContent = data.data.countdown || '00:00';
+                        
+                        // Actualizar indicador de estado
+                        const statusIndicator = document.querySelector('.status-indicator');
+                        if (statusIndicator) {
+                            statusIndicator.className = 'status-indicator ' + 
+                                (data.data.web_status === 'Activo' ? 'status-active' : 'status-inactive');
+                        }
+                        
+                        console.log('Dashboard actualizado exitosamente');
+                    } else {
+                        console.error('Error en respuesta del servidor:', data.message);
+                    }
+                } else {
+                    console.error('Error HTTP:', response.status);
+                }
+            } catch (error) {
+                console.error('Error actualizando datos:', error);
+            }
+        }
+        
+        // Auto-refresh cada 30 segundos
+        setInterval(refreshData, 30000);
+        
+        // Prevenir clicks en enlaces si no están disponibles
+        document.addEventListener('DOMContentLoaded', function() {
+            const downloadLinks = document.querySelectorAll('.download-btn');
+            downloadLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (!href || href === '#') {
+                        e.preventDefault();
+                        alert('Archivo no disponible en este momento');
+                    }
+                });
+            });
+        });
+        
+        // Función para validar entrada del usuario (si se añaden formularios)
+        function sanitizeInput(input) {
+            const div = document.createElement('div');
+            div.textContent = input;
+            return div.innerHTML;
+        }
+        
+        // Prevenir XSS básico en contenido dinámico
+        function secureUpdateContent(elementId, content) {
+            const element = document.getElementById(elementId);
+            if (element && typeof content === 'string') {
+                element.textContent = content; // Usar textContent en lugar de innerHTML
+            }
+        }
+    </script>
+</body>
+</html>
